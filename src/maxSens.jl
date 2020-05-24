@@ -36,7 +36,7 @@ function solve(solver::MaxSens, problem::Problem)
     result = true
     delta = solver.resolution
     lower, upper = low(problem.input), high(problem.input)
-    n_hypers_per_dim = max.(ceil.(Int, (upper-lower) / delta), 1)
+    n_hypers_per_dim = BigInt.(max.(ceil.(Int, (upper-lower) / delta), 1))
 
     # preallocate work arrays
     nt = nthreads()

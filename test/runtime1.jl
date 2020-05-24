@@ -2,12 +2,10 @@
 using HullGMP
 using Test
 using LazySets
-import HullGMP: forward_network
 
 nnet = read_nnet("nnet/test10.nnet")
 solver = MaxSens(5.0, false)
 
-# entry 23 in MNIST datset
 center = fill(5.0, 10)
 radius = fill(5.0, 10)
 inputSet = Hyperrectangle(center, radius)
@@ -21,8 +19,8 @@ outputSet = Hyperrectangle(output_center, output_radius)
 
 problem = Problem(nnet, inputSet, outputSet)
 
-print("MaxSens - test")
 timed_result =@timed solve(solver, problem)
+print("MaxSens - test")
 print(" - Time: " * string(timed_result[2]) * " s")
 print(" - Output: ")
 print(timed_result[1].status)

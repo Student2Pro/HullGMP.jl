@@ -52,8 +52,8 @@ export solve
 include("reachability.jl")
 include("maxSens.jl")
 include("hullReach.jl")
-include("SGSV.jl")
+include("speGuid.jl")
 include("hullSearch.jl")
-export MaxSens, HullReach, SGSV, HullSearch
+export MaxSens, HullReach, SpeGuid, HullSearch
 
 end # module

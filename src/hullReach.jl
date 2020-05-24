@@ -27,8 +27,13 @@ function solve(solver::HullReach, problem::Problem)
     n_hypers_per_dim = BigInt.(max.(ceil.(Int, (upper-lower) / delta), 1))
 
     # preallocate work arrays
-    local_lower, local_upper, CI = similar(lower), similar(lower), similar(lower)
-    for i in 1:prod(n_hypers_per_dim)
+    nt = nthreads()
+    println(nt)
+    local_lower = zeros(Float64, nt, lastindex(lower))
+    local_upper = similar(local_lower)
+    CI = zeros(Int64, nt, lastindex(lower))
+
+    @threads for i in 1:prod(n_hypers_per_dim)
         n = i
         hull = false
         for j in firstindex(CI):lastindex(CI)
