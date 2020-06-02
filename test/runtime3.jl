@@ -1,4 +1,4 @@
-#SGSV, Specification-Guided Safety Verification
+#SpeGuid, Specification-Guided Safety Verification
 using HullReachNV
 using Test
 using LazySets

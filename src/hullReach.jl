@@ -20,20 +20,15 @@ Sound but not complete.
 end
 
 # This is the main function
-function solve(solver::HullReach, problem::Problem)
+function solve(solver::HullReach, problem::Problem) #original
     result = true
     delta = solver.resolution
     lower, upper = low(problem.input), high(problem.input)
     n_hypers_per_dim = BigInt.(max.(ceil.(Int, (upper-lower) / delta), 1))
 
     # preallocate work arrays
-    nt = nthreads()
-    println(nt)
-    local_lower = zeros(Float64, nt, lastindex(lower))
-    local_upper = similar(local_lower)
-    CI = zeros(Int64, nt, lastindex(lower))
-
-    @threads for i in 1:prod(n_hypers_per_dim)
+    local_lower, local_upper, CI = similar(lower), similar(lower), similar(lower)
+    for i in 1:prod(n_hypers_per_dim)
         n = i
         hull = false
         for j in firstindex(CI):lastindex(CI)
@@ -59,28 +54,101 @@ function solve(solver::HullReach, problem::Problem)
 end
 
 """
-function check_reach(solver::HullReach, input::Hyperrectangle, nnet::Network, output::Hyperrectangle)
+function solve(solver::HullReach, problem::Problem) #multi threads
     result = true
     delta = solver.resolution
-    lower, upper = low(input), high(input)
-    n_hypers_per_dim = max.(ceil.(Int, (upper-lower) / delta), 1)
+    lower, upper = low(problem.input), high(problem.input)
+    n_hypers_per_dim = BigInt.(max.(ceil.(Int, (upper-lower) / delta), 1))
 
     # preallocate work arrays
-    local_lower, local_upper, CI = similar(lower), similar(lower), similar(lower)
-    for i in 1:prod(n_hypers_per_dim)
+    nt = nthreads()
+    println(nt)
+    local_lower = zeros(Float64, nt, lastindex(lower))
+    local_upper, CI = similar(local_lower), similar(local_lower)
+
+    @threads for i in 1:prod(n_hypers_per_dim)
         n = i
-        for j in firstindex(CI):lastindex(CI)
-            n, CI[j] = fldmod1(n, n_hypers_per_dim[j])
+        id = threadid()
+        hull = false
+        for j in firstindex(lower):lastindex(lower)
+            n, CI[id, j] = fldmod1(n, n_hypers_per_dim[j])
+            if CI[id, j] == 1 || CI[id, j] == n_hypers_per_dim[j]
+                hull = true
+            end
         end
-        @. local_lower = lower + delta * (CI - 1)
-        @. local_upper = min(local_lower + delta, upper)
-        hyper = Hyperrectangle(low = local_lower, high = local_upper)
-        reach = forward_network(solver, nnet, hyper)
-        if !issubset(reach, output)
-            result = false
+        if hull
+            @. local_lower[id,:] = lower + delta * (CI[id,:] - 1)
+            @. local_upper[id,:] = min(local_lower[id,:] + delta, upper)
+            hyper = Hyperrectangle(low = local_lower[id,:], high = local_upper[id,:])
+            reach = forward_network(solver, problem.network, hyper)
+            if !issubset(reach, problem.output)
+                result = false
+            end
         end
     end
-    return result
+    if result
+        return BasicResult(:holds)
+    end
+    return BasicResult(:violated)
+end
+"""
+
+"""
+function solve(solver::HullReach, problem::Problem) #multi tasks
+    result = true
+    delta = solver.resolution
+    lower, upper = low(problem.input), high(problem.input)
+    n_hypers_per_dim = BigInt.(max.(ceil.(Int, (upper-lower) / delta), 1))
+    total = prod(n_hypers_per_dim)
+
+    local_lower, local_upper, CI = similar(lower), similar(lower), similar(lower)
+    channel = Channel{Hyperrectangle}(64) #64
+    remain = total
+    count = BigInt(0)
+    while remain != 0
+        if count <= total
+            count += 1
+            n = count
+            hull = false
+            for j in firstindex(CI):lastindex(CI)
+                n, CI[j] = fldmod1(n, n_hypers_per_dim[j])
+                if CI[j] == 1 || CI[j] == n_hypers_per_dim[j]
+                    hull = true
+                end
+            end
+            if hull
+                @. local_lower = lower + delta * (CI - 1)
+                @. local_upper = min(local_lower + delta, upper)
+                hyper = Hyperrectangle(low = local_lower, high = local_upper)
+                put!(channel, hyper)
+                try
+                    put!(channel, hyper)
+                catch
+                    println(total - count)
+                end
+                if count == total
+                    close(channel)
+                end
+                @async begin
+                    #println("Task start")
+                    hr = take!(channel)
+                    reach = forward_network(solver, nnet, hr)
+                    if !issubset(reach, output)
+                        result = false
+                        println("result false")
+                    end
+                    remain -= 1
+                    #println("Task end")
+                end
+            else
+                remain -= 1
+            end
+        end
+    end
+    if result
+        return BasicResult(:holds)
+    end
+    return BasicResult(:violated)
 end
 """
 

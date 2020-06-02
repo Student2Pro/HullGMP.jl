@@ -23,13 +23,12 @@ end
 
 # This is the main function
 function solve(solver::HullSearch, problem::Problem)
-    result = true
     input = problem.input
     stack = Vector{Hyperrectangle}(undef, 0)
     push!(stack, input)
-    count = 1
+    #count = 1
     while !isempty(stack)
-        interval = pop!(stack)
+        interval = popfirst!(stack)
         reach = forward_network(solver, problem.network, interval)
         if issubset(reach, problem.output)
             continue
@@ -39,20 +38,70 @@ function solve(solver::HullSearch, problem::Problem)
                 for i in 1:2
                     if isborder(sections[i], problem.input)
                         push!(stack, sections[i])
-                        count += 1
+                        #count += 1
                     end
                 end
             else
-                result = false
+                return BasicResult(:unknown)
             end
         end
     end
-    print("\n$(count)\n")
+    #print("\n$(count)\n")
+    return BasicResult(:holds)
+end
+
+"""
+function solve(solver::HullSearch, problem::Problem) #multi tasks
+    result = true
+    input = problem.input
+    channel = Channel{Hyperrectangle}(64) #64
+    put!(channel, input)
+    remain = 1 #remain Hyperrectangle in channel
+    #count = 0
+    while remain != 0
+        #println("while loop begin")
+        interval = 0
+        try
+            interval = take!(channel)
+        catch
+            break
+        end
+        @async begin
+            #println("Task start")
+            if isopen(channel) #if channel is closed, stop Task
+                reach = forward_network(solver, problem.network, interval)
+                #count += 1
+            end
+            if isopen(channel)
+                if issubset(reach, problem.output)
+                    remain -= 1
+                else
+                    if get_largest_width(interval) > solver.tolerance
+                        sections = bisect(interval)
+                        for i in 1:2
+                            if isborder(sections[i], problem.input)
+                                put!(channel, sections[i])
+                                remain += 1
+                            end
+                        end
+                        remain -= 1
+                    else
+                        close(channel)
+                        result = false
+                    end
+                end
+            end
+            #println("Task end")
+        end
+        #println("while loop end")
+    end
+    #println(count)
     if result
         return BasicResult(:holds)
     end
     return BasicResult(:unknown)
 end
+"""
 
 #to determine whether x has intersection with any border of y
 function isborder(x::Hyperrectangle, y::Hyperrectangle)

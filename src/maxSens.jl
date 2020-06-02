@@ -31,8 +31,35 @@ Sound but not complete.
 end
 
 # This is the main function
+function solve(solver::MaxSens, problem::Problem) #original
+    result = true
+    delta = solver.resolution
+    lower, upper = low(problem.input), high(problem.input)
+    n_hypers_per_dim = BigInt.(max.(ceil.(Int, (upper-lower) / delta), 1))
 
-function solve(solver::MaxSens, problem::Problem)
+    # preallocate work arrays
+    local_lower, local_upper, CI = similar(lower), similar(lower), similar(lower)
+    for i in 1:prod(n_hypers_per_dim)
+        n = i
+        for j in firstindex(CI):lastindex(CI)
+            n, CI[j] = fldmod1(n, n_hypers_per_dim[j])
+        end
+        @. local_lower = lower + delta * (CI - 1)
+        @. local_upper = min(local_lower + delta, upper)
+        hyper = Hyperrectangle(low = local_lower, high = local_upper)
+        reach = forward_network(solver, problem.network, hyper)
+        if !issubset(reach, problem.output)
+            result = false
+        end
+    end
+    if result
+        return BasicResult(:holds)
+    end
+    return BasicResult(:violated)
+end
+
+"""
+function solve(solver::MaxSens, problem::Problem) #multi threads
     result = true
     delta = solver.resolution
     lower, upper = low(problem.input), high(problem.input)
@@ -54,34 +81,6 @@ function solve(solver::MaxSens, problem::Problem)
         @. local_lower[id,:] = lower + delta * (CI[id,:] - 1)
         @. local_upper[id,:] = min(local_lower[id,:] + delta, upper)
         hyper = Hyperrectangle(low = local_lower[id,:], high = local_upper[id,:])
-        reach = forward_network(solver, problem.network, hyper)
-        if !issubset(reach, problem.output)
-            result = false
-        end
-    end
-    if result
-        return BasicResult(:holds)
-    end
-    return BasicResult(:violated)
-end
-
-"""
-function solve(solver::MaxSens, problem::Problem)
-    result = true
-    delta = solver.resolution
-    lower, upper = low(problem.input), high(problem.input)
-    n_hypers_per_dim = max.(ceil.(Int, (upper-lower) / delta), 1)
-
-    # preallocate work arrays
-    local_lower, local_upper, CI = similar(lower), similar(lower), similar(lower)
-    for i in 1:prod(n_hypers_per_dim)
-        n = i
-        for j in firstindex(CI):lastindex(CI)
-            n, CI[j] = fldmod1(n, n_hypers_per_dim[j])
-        end
-        @. local_lower = lower + delta * (CI - 1)
-        @. local_upper = min(local_lower + delta, upper)
-        hyper = Hyperrectangle(low = local_lower, high = local_upper)
         reach = forward_network(solver, problem.network, hyper)
         if !issubset(reach, problem.output)
             result = false

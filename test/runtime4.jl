@@ -1,4 +1,4 @@
-#SCH, Specification-Guided Safety Verification Combine HullReach
+#HullSearch
 using HullReachNV
 using Test
 using LazySets
