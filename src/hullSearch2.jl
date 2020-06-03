@@ -1,32 +1,15 @@
-"""
-    HullSearch(tolerance::Float64)
+#HullSearch2 count
 
-HullSearch, SGSV Combine HullReach, performs over-approximated reachability analysis to compute the over-approximated output reachable set for a network.
-
-# Problem requirement
-1. Network: any depth, any activation that is monotone
-2. Input: `HPolytope`
-3. Output: `HPolytope`
-
-# Return
-`BasicResult`
-
-# Method
-Search and Reachability
-
-# Property
-Sound but not complete.
-"""
-@with_kw struct HullSearch
+@with_kw struct HullSearch2
     tolerance::Float64 = 1.0
 end
 
 # This is the main function
-function solve(solver::HullSearch, problem::Problem)
+function solve(solver::HullSearch2, problem::Problem)
     input = problem.input
     stack = Vector{Hyperrectangle}(undef, 0)
     push!(stack, input)
-    #count = 1
+    count = 1
     while !isempty(stack)
         interval = popfirst!(stack)
         reach = forward_network(solver, problem.network, interval)
@@ -38,7 +21,7 @@ function solve(solver::HullSearch, problem::Problem)
                 for i in 1:2
                     if isborder(sections[i], problem.input)
                         push!(stack, sections[i])
-                        #count += 1
+                        count += 1
                     end
                 end
             else
@@ -46,23 +29,11 @@ function solve(solver::HullSearch, problem::Problem)
             end
         end
     end
-    #print("\n$(count)\n")
+    println(count)
     return BasicResult(:holds)
 end
 
-#to determine whether x has intersection with any border of y
-function isborder(x::Hyperrectangle, y::Hyperrectangle)
-    x_lower, x_upper = low(x), high(x)
-    y_lower, y_upper = low(y), high(y)
-    for i in 1:lastindex(x_lower)
-        if x_lower[i] == y_lower[i] || x_upper[i] == y_upper[i]
-            return true
-        end
-    end
-    return false
-end
-
-function forward_layer(solver::HullSearch, L::Layer, input::Hyperrectangle)
+function forward_layer(solver::HullSearch2, L::Layer, input::Hyperrectangle)
     (W, b, act) = (L.weights, L.bias, L.activation)
     center = zeros(size(W, 1))
     gamma  = zeros(size(W, 1))
@@ -73,7 +44,7 @@ function forward_layer(solver::HullSearch, L::Layer, input::Hyperrectangle)
     return Hyperrectangle(center, gamma)
 end
 
-function forward_node(solver::HullSearch, node::Node, input::Hyperrectangle)
+function forward_node(solver::HullSearch2, node::Node, input::Hyperrectangle)
     output    = node.w' * input.center + node.b
     deviation = sum(abs.(node.w) .* input.radius)
     βmax = node.act(output + deviation)

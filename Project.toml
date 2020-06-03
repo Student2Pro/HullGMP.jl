@@ -1,7 +1,7 @@
 name = "HullGMP"
 uuid = "20ac5a60-9d67-11ea-2733-e31a67307bc5"
 authors = ["Cloud Johnson"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 CDDLib = "3391f64e-dcde-5f30-b752-e11513730f60"

@@ -58,41 +58,6 @@ function solve(solver::MaxSens, problem::Problem) #original
     return BasicResult(:violated)
 end
 
-"""
-function solve(solver::MaxSens, problem::Problem) #multi threads
-    result = true
-    delta = solver.resolution
-    lower, upper = low(problem.input), high(problem.input)
-    n_hypers_per_dim = BigInt.(max.(ceil.(Int, (upper-lower) / delta), 1))
-
-    # preallocate work arrays
-    nt = nthreads()
-    println(nt)
-    local_lower = zeros(Float64, nt, lastindex(lower))
-    local_upper = similar(local_lower)
-    CI = zeros(Int64, nt, lastindex(lower))
-
-    @threads for i in 1:prod(n_hypers_per_dim)
-        n = i
-        id = threadid()
-        for j in firstindex(lower):lastindex(lower)
-            n, CI[id, j] = fldmod1(n, n_hypers_per_dim[j])
-        end
-        @. local_lower[id,:] = lower + delta * (CI[id,:] - 1)
-        @. local_upper[id,:] = min(local_lower[id,:] + delta, upper)
-        hyper = Hyperrectangle(low = local_lower[id,:], high = local_upper[id,:])
-        reach = forward_network(solver, problem.network, hyper)
-        if !issubset(reach, problem.output)
-            result = false
-        end
-    end
-    if result
-        return BasicResult(:holds)
-    end
-    return BasicResult(:violated)
-end
-"""
-
 # This function is called by forward_network
 function forward_layer(solver::MaxSens, L::Layer, input::Hyperrectangle)
     (W, b, act) = (L.weights, L.bias, L.activation)
