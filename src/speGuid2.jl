@@ -23,6 +23,7 @@ function solve(solver::SpeGuid2, problem::Problem)
                     count += 1
                 end
             else
+                println(count)
                 return BasicResult(:unknown)
             end
         end
