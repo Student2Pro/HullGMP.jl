@@ -11,7 +11,7 @@ function solve(solver::SpeGuid1, problem::Problem) #multi tasks
     channel = Channel{Hyperrectangle}(64) #64
     put!(channel, input)
     remain = 1 #remain Hyperrectangle in channel
-    #count = 0
+    count = 0
     while remain != 0
         #println("while loop begin")
         interval = 0
@@ -24,7 +24,7 @@ function solve(solver::SpeGuid1, problem::Problem) #multi tasks
             #println("Task start")
             if isopen(channel) #if channel is closed, stop Task
                 reach = forward_network(solver, problem.network, interval)
-                #count += 1
+                count += 1
             end
             if isopen(channel)
                 if issubset(reach, problem.output)
@@ -46,7 +46,7 @@ function solve(solver::SpeGuid1, problem::Problem) #multi tasks
         end
         #println("while loop end")
     end
-    #println(count)
+    println(count)
     if result
         return BasicResult(:holds)
     end

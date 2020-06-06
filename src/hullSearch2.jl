@@ -9,10 +9,11 @@ function solve(solver::HullSearch2, problem::Problem)
     input = problem.input
     stack = Vector{Hyperrectangle}(undef, 0)
     push!(stack, input)
-    count = 1
+    count = 0
     while !isempty(stack)
         interval = popfirst!(stack)
         reach = forward_network(solver, problem.network, interval)
+        count += 1
         if issubset(reach, problem.output)
             continue
         else
@@ -21,7 +22,6 @@ function solve(solver::HullSearch2, problem::Problem)
                 for i in 1:2
                     if isborder(sections[i], problem.input)
                         push!(stack, sections[i])
-                        count += 1
                     end
                 end
             else

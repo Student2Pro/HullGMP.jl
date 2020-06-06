@@ -12,51 +12,56 @@ function solve(solver::HullReach2, problem::Problem) #multi tasks
     lower, upper = low(problem.input), high(problem.input)
     n_hypers_per_dim = BigInt.(max.(ceil.(Int, (upper-lower) / delta), 1))
     total = prod(n_hypers_per_dim)
-
     local_lower, local_upper, CI = similar(lower), similar(lower), similar(lower)
-    channel = Channel{Hyperrectangle}(64) #64
+
+    chnl = Channel{Int64}(64)
+    for i in 1:64
+        put!(chnl, 1)
+    end
     remain = total
     count = BigInt(0)
+
     while remain != 0
-        if count <= total
-            count += 1
-            n = count
-            hull = false
-            for j in firstindex(CI):lastindex(CI)
-                n, CI[j] = fldmod1(n, n_hypers_per_dim[j])
-                if CI[j] == 1 || CI[j] == n_hypers_per_dim[j]
-                    hull = true
-                end
-            end
-            if hull
-                @. local_lower = lower + delta * (CI - 1)
-                @. local_upper = min(local_lower + delta, upper)
-                hyper = Hyperrectangle(low = local_lower, high = local_upper)
-                put!(channel, hyper)
-                try
-                    put!(channel, hyper)
-                catch
-                    println(total - count)
-                end
-                if count == total
-                    close(channel)
-                end
-                @async begin
-                    #println("Task start")
-                    hr = take!(channel)
-                    reach = forward_network(solver, nnet, hr)
-                    if !issubset(reach, output)
-                        result = false
-                        println("result false")
+        #println("While loop start")
+        try
+            take!(chnl)
+        catch
+            break
+        end
+        if count < total
+            @async begin
+                count += 1
+                n = count
+                hull = false
+                for j in firstindex(CI):lastindex(CI)
+                    n, CI[j] = fldmod1(n, n_hypers_per_dim[j])
+                    if CI[j] == 1 || CI[j] == n_hypers_per_dim[j]
+                        hull = true
                     end
-                    remain -= 1
-                    #println("Task end")
                 end
-            else
+                #println(CI)
+                #println("hull:" * string(hull))
+                if hull
+                    @. local_lower = lower + delta * (CI - 1)
+                    @. local_upper = min(local_lower + delta, upper)
+                    hyper = Hyperrectangle(low = local_lower, high = local_upper)
+                    reach = forward_network(solver, problem.network, hyper)
+                    if !issubset(reach, problem.output)
+                        result = false
+                        #println("result false")
+                    end
+                end
                 remain -= 1
+                if n <= total - 64
+                    put!(chnl, 1)
+                else
+                    close(chnl)
+                end
             end
         end
+        #println("While loop end")
     end
+    println("remain: " * string(remain))
     if result
         return BasicResult(:holds)
     end
