@@ -49,11 +49,11 @@ function solve(solver::HullSearch1, problem::Problem) #multi tasks
         end
         #println("while loop end")
     end
-    #println(count)
+    println(count)
     if result
         return BasicResult(:holds)
     end
-    return BasicResult(:unknown)
+    return BasicResult(:violated)
 end
 
 function forward_layer(solver::HullSearch1, L::Layer, input::Hyperrectangle)

@@ -26,7 +26,7 @@ function solve(solver::HullSearch2, problem::Problem)
                 end
             else
                 println(count)
-                return BasicResult(:unknown)
+                return BasicResult(:violated)
             end
         end
     end

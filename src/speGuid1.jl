@@ -8,16 +8,16 @@ end
 function solve(solver::SpeGuid1, problem::Problem) #multi tasks
     result = true
     input = problem.input
-    channel = Channel{Hyperrectangle}(64) #64
+    channel = Channel{Hyperrectangle}(512) #64
     put!(channel, input)
     remain = 1 #remain Hyperrectangle in channel
     count = 0
     while remain != 0
         #println("while loop begin")
-        interval = 0
-        try
+        if isopen(channel)
             interval = take!(channel)
-        catch
+        else
+            println(isopen(channel))
             break
         end
         @async begin
@@ -37,6 +37,7 @@ function solve(solver::SpeGuid1, problem::Problem) #multi tasks
                         end
                         remain += 1
                     else
+                        println(interval)
                         close(channel)
                         result = false
                     end
@@ -46,11 +47,11 @@ function solve(solver::SpeGuid1, problem::Problem) #multi tasks
         end
         #println("while loop end")
     end
-    println(count)
+    println("count: " * string(count) * " remain: " * string(remain))
     if result
         return BasicResult(:holds)
     end
-    return BasicResult(:unknown)
+    return BasicResult(:violated)
 end
 
 function forward_layer(solver::SpeGuid1, L::Layer, input::Hyperrectangle)

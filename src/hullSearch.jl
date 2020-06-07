@@ -42,7 +42,7 @@ function solve(solver::HullSearch, problem::Problem)
                     end
                 end
             else
-                return BasicResult(:unknown)
+                return BasicResult(:violated)
             end
         end
     end
