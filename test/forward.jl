@@ -2,7 +2,7 @@ using HullGMP
 using LazySets
 import HullGMP: ReLU, Layer
 
-nnet = read_nnet("nnet/test10.nnet")
+nnet = read_nnet("nnet/test2.nnet")
 
 function forward_network(nnet::Network, input::Vector)
     reach = input
@@ -17,6 +17,6 @@ function forward_layer(L::Layer, input::Vector)
     return act.(W * input .+ b)
 end
 
-input = fill(5.0, 10)
+input = fill(5.0, 2)
 output = forward_network(nnet, input)
 println(output)
