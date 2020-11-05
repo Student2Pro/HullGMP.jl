@@ -16,7 +16,7 @@ inputSet = Hyperrectangle(center, radius)
 
 output_center = fill(0.0, 2)
 output_radius = fill(45.0, 2)
-outputSet = Hyperrectangle(output_center, output_radius)
+outputSet = Hyperrectangle(output_center, output_radius) #output constraint
 
 problem = Problem(nnet, inputSet, outputSet)
 
