@@ -18,6 +18,6 @@ Please note that the implementations of the algorithms may not perform optimally
 
 ## Example Usage
 
-Create and edit a .jl file, for example, https://github.com/Student2Pro/HullGMP.jl/blob/master/test/runtime1.jl, which also contains the experiments settings in the paper.
+Create and edit a .jl file, for example, https://github.com/Student2Pro/HullGMP.jl/blob/master/test/group1_dnn1.jl, which also contains the experiments settings in the paper.
 
 Then run it using julia client.
