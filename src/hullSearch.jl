@@ -1,7 +1,7 @@
 """
     HullSearch(tolerance::Float64)
 
-HullSearch, SGSV Combine HullReach, performs over-approximated reachability analysis to compute the over-approximated output reachable set for a network.
+HullSearch performs over-approximated reachability analysis to compute the over-approximated output reachable set for a network.
 
 # Problem requirement
 1. Network: any depth, any activation that is monotone
