@@ -5,7 +5,7 @@ HullSearch performs over-approximated reachability analysis to compute the over-
 
 # Problem requirement
 1. Network: any depth, any activation that is monotone
-2. Input: `HPolytope`
+2. Input: `Hyperrectangle`
 3. Output: `HPolytope`
 
 # Return
