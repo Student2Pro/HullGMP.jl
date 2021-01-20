@@ -6,7 +6,7 @@ HullReach performs over-approximated reachability analysis to compute the over-a
 # Problem requirement
 1. Network: any depth, any activation that is monotone
 2. Input: `Hyperrectangle`
-3. Output: `AbstractPolytope`
+3. Output: `HPolytope`
 
 # Return
 `BasicResult`
